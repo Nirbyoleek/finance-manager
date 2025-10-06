@@ -10,25 +10,14 @@ const compat = new FlatCompat({
 });
 
 const eslintConfig = [
-  // Extend Next.js recommended configs
-  ...compat.extends('next/core-web-vitals', 'next/typescript'),
-  
-  // Add Prettier config (turns off conflicting rules)
-  ...compat.extends('prettier'),
-
-  // Global ignores
   {
-    ignores: [
-      'node_modules/**',
-      '.next/**',
-      'out/**',
-      'build/**',
-      'next-env.d.ts',
-      '.husky/**',
-    ],
-  },
-
-  // Custom rules
+    ignores: ['node_modules/**', '.next/**', 'out/**', 'build/**', 'next-env.d.ts'],
+  }, // Extend Next.js recommended configs
+  ...compat.extends('next/core-web-vitals', 'next/typescript'), // Add Prettier config (turns off conflicting rules)
+  ...compat.extends('prettier'), // Global ignores
+  {
+    ignores: ['node_modules/**', '.next/**', 'out/**', 'build/**', 'next-env.d.ts', '.husky/**'],
+  }, // Custom rules
   {
     rules: {
       'no-console': ['warn', { allow: ['warn', 'error'] }],
