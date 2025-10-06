@@ -1,0 +1,109 @@
+// This is your Prisma schema file
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// User model - represents app users
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  password  String   // We'll hash this
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  accounts     Account[]
+  transactions Transaction[]
+  categories   Category[]
+  budgets      Budget[]
+}
+
+// Account model - bank accounts, cash, credit cards
+model Account {
+  id        String   @id @default(cuid())
+  name      String   // e.g., "Chase Checking", "Cash"
+  type      String   // "checking", "savings", "credit_card", "cash"
+  balance   Float    @default(0)
+  currency  String   @default("USD")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Foreign key
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Relationships
+  transactions Transaction[]
+
+  @@index([userId])
+}
+
+// Category model - expense/income categories
+model Category {
+  id        String   @id @default(cuid())
+  name      String   // e.g., "Groceries", "Salary", "Rent"
+  type      String   // "income" or "expense"
+  icon      String?  // emoji or icon name
+  color     String?  // hex color for UI
+  createdAt DateTime @default(now())
+
+  // Foreign key
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Relationships
+  transactions Transaction[]
+  budgets      Budget[]
+
+  @@index([userId])
+}
+
+// Transaction model - all income/expense records
+model Transaction {
+  id          String   @id @default(cuid())
+  amount      Float
+  type        String   // "income" or "expense"
+  description String?
+  date        DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Foreign keys
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accountId  String
+  account    Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([accountId])
+  @@index([categoryId])
+  @@index([date])
+}
+
+// Budget model - monthly spending limits per category
+model Budget {
+  id        String   @id @default(cuid())
+  amount    Float    // budget limit
+  period    String   // "monthly", "weekly", "yearly"
+  startDate DateTime
+  endDate   DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Foreign keys
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([categoryId])
+}
