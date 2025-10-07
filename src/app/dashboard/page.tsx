@@ -1,20 +1,20 @@
 import { redirect } from 'next/navigation';
 import { auth } from '@/auth';
+import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
-import { 
-  ArrowUpRight, 
-  CreditCard, 
-  DollarSign, 
-  TrendingDown, 
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  DollarSign,
+  TrendingDown,
   TrendingUp,
   Plus,
   Receipt,
   BarChart3,
-  Target
+  Target,
+  ArrowUpRight,
+  CreditCard,
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -23,11 +23,24 @@ export default async function DashboardPage() {
     redirect('/auth/signin');
   }
 
+  // Fetch user with accounts
+  const user = await prisma.user.findUnique({
+    where: { email: session.user.email! },
+    include: {
+      financeAccounts: {
+        where: { isActive: true },
+      },
+    },
+  });
+
+  const accounts = user?.financeAccounts || [];
+  const totalBalance = accounts.reduce((sum, acc) => sum + acc.balance, 0);
+
   return (
     <div className="flex min-h-screen flex-col">
       {/* Header */}
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-14 max-w-screen-2xl items-center">
+        <div className="container mx-auto flex h-14 max-w-screen-2xl items-center">
           <div className="mr-4 flex">
             <Link className="mr-6 flex items-center space-x-2" href="/dashboard">
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
@@ -75,36 +88,43 @@ export default async function DashboardPage() {
           <div className="mb-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Balance</CardTitle>
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  Total Balance
+                </CardTitle>
                 <DollarSign className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">₹0.00</div>
-                <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
-                  <TrendingUp className="h-3 w-3 text-green-500" />
-                  +2.5% from last month
+                <div className="text-3xl font-bold">
+                  ₹{totalBalance.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {accounts.length} {accounts.length === 1 ? 'account' : 'accounts'}
                 </p>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Income</CardTitle>
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  Income
+                </CardTitle>
                 <TrendingUp className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">₹0.00</div>
+                <div className="text-3xl font-bold">₹0.00</div>
                 <p className="text-xs text-muted-foreground mt-1">This month</p>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Expenses</CardTitle>
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  Expenses
+                </CardTitle>
                 <TrendingDown className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">₹0.00</div>
+                <div className="text-3xl font-bold">₹0.00</div>
                 <p className="text-xs text-muted-foreground mt-1">This month</p>
               </CardContent>
             </Card>
@@ -164,12 +184,12 @@ export default async function DashboardPage() {
                 </div>
                 <h3 className="mb-2 text-lg font-semibold">No transactions yet</h3>
                 <p className="mb-4 max-w-sm text-center text-sm text-muted-foreground">
-                  Add your first account to start tracking your income and expenses.
+                  Add your first transaction to start tracking your income and expenses.
                 </p>
                 <Button asChild>
-                  <Link href="/accounts/new">
+                  <Link href="/transactions/new">
                     <Plus className="mr-2 h-4 w-4" />
-                    Add Your First Account
+                    Add Transaction
                   </Link>
                 </Button>
               </div>
